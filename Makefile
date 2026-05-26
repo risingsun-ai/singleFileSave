@@ -1,11 +1,11 @@
-# Makefile for webclone.sh
+# Makefile for web2offline.sh
 # Professional installation and testing targets
 
 SHELL := /bin/bash
 .PHONY: all install uninstall test debug clean help install-user lint info
 
 # Configuration
-SCRIPT_NAME := webclone.sh
+SCRIPT_NAME := web2offline.sh
 INSTALL_DIR ?= /usr/local/bin
 USER_BIN_DIR := $(HOME)/.local/bin
 
@@ -17,7 +17,7 @@ all: help
 #######################################
 help:
 	@echo ""
-	@echo "webclone.sh Makefile"
+	@echo "web2offline.sh Makefile"
 	@echo ""
 	@echo "Available targets:"
 	@echo "  install      - Install script to system path (/usr/local/bin)"
@@ -160,16 +160,16 @@ test-markdown:
 test-help:
 	@echo ""
 	@echo "[TEST] Testing --help option..."
-	@./$(SCRIPT_NAME) --help > /tmp/webclone_help.txt
-	@if grep -q "USAGE" /tmp/webclone_help.txt && \
-	   grep -q "OPTIONS" /tmp/webclone_help.txt && \
-	   grep -q "EXAMPLES" /tmp/webclone_help.txt; then \
+	@./$(SCRIPT_NAME) --help > /tmp/web2offline_help.txt
+	@if grep -q "USAGE" /tmp/web2offline_help.txt && \
+	   grep -q "OPTIONS" /tmp/web2offline_help.txt && \
+	   grep -q "EXAMPLES" /tmp/web2offline_help.txt; then \
 		echo "[PASS] Help menu displays correctly"; \
 	else \
 		echo "[FAIL] Help menu is incomplete"; \
 		exit 1; \
 	fi
-	@rm -f /tmp/webclone_help.txt
+	@rm -f /tmp/web2offline_help.txt
 
 #######################################
 # Test version option
@@ -177,14 +177,14 @@ test-help:
 test-version:
 	@echo ""
 	@echo "[TEST] Testing --version option..."
-	@./$(SCRIPT_NAME) --version > /tmp/webclone_version.txt
-	@if grep -q "webclone.sh version" /tmp/webclone_version.txt; then \
+	@./$(SCRIPT_NAME) --version > /tmp/web2offline_version.txt
+	@if grep -q "web2offline.sh version" /tmp/web2offline_version.txt; then \
 		echo "[PASS] Version displays correctly"; \
 	else \
 		echo "[FAIL] Version output is incorrect"; \
 		exit 1; \
 	fi
-	@rm -f /tmp/webclone_version.txt
+	@rm -f /tmp/web2offline_version.txt
 
 #######################################
 # Debug target - run with verbose/debug mode
@@ -227,7 +227,7 @@ lint:
 # Show script info
 #######################################
 info:
-	@echo "webclone.sh Information"
+	@echo "web2offline.sh Information"
 	@echo ""
 	@echo "Script: $(SCRIPT_NAME)"
 	@echo "Size: $$(wc -c < $(SCRIPT_NAME)) bytes"
