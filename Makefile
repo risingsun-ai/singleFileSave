@@ -1,235 +1,244 @@
-# =============================================================================
-# Makefile for web2offline.sh
-# =============================================================================
-# Professional build/installation management for the web2offline script
-#
-# Targets:
-#   install    - Install script to system bin directory
-#   uninstall  - Remove script from system
-#   test       - Run automated tests
-#   debug      - Execute in verbose/debug mode
-#   help       - Display available targets
-#
-# Usage:
-#   make install      # Install to /usr/local/bin (requires sudo)
-#   make install PREFIX=$HOME/.local  # Install to user directory
-#   make uninstall    # Remove from system
-#   make test         # Run tests
-#   make debug URL=https://example.com  # Debug execution
-# =============================================================================
+# Makefile for webclone.sh
+# Professional installation and testing targets
+
+SHELL := /bin/bash
+.PHONY: all install uninstall test debug clean help install-user lint info
 
 # Configuration
-SCRIPT_NAME := web2offline.sh
+SCRIPT_NAME := webclone.sh
 INSTALL_DIR ?= /usr/local/bin
-PREFIX ?= $(INSTALL_DIR)
-DESTDIR ?= 
-
-# Colors for output (if terminal supports it)
-COLOR_RESET := \033[0m
-COLOR_GREEN := \033[32m
-COLOR_YELLOW := \033[33m
-COLOR_RED := \033[31m
-COLOR_BLUE := \033[34m
-
-# Check if running as root
-IS_ROOT := $(shell [ "$(UID)" = "0" ] && echo "yes" || echo "no")
+USER_BIN_DIR := $(HOME)/.local/bin
 
 # Default target
-.PHONY: all
 all: help
 
-# =============================================================================
-# Installation Targets
-# =============================================================================
-
-.PHONY: install
-install: check-script
-	@echo -e "$(COLOR_BLUE)==> Installing $(SCRIPT_NAME) to $(PREFIX)...$(COLOR_RESET)"
-	@if [ "$(PREFIX)" = "/usr/local/bin" ] && [ "$(IS_ROOT)" != "yes" ]; then \
-		echo -e "$(COLOR_YELLOW)Note: Installing to /usr/local/bin requires sudo privileges.$(COLOR_RESET)"; \
-		echo -e "$(COLOR_YELLOW)Run with: sudo make install$(COLOR_RESET)"; \
-		echo -e "$(COLOR_YELLOW)Or use: make install PREFIX=$$HOME/.local/bin$(COLOR_RESET)"; \
-		exit 1; \
-	fi
-	@mkdir -p $(DESTDIR)$(PREFIX)
-	@cp $(SCRIPT_NAME) $(DESTDIR)$(PREFIX)/$(SCRIPT_NAME)
-	@chmod +x $(DESTDIR)$(PREFIX)/$(SCRIPT_NAME)
-	@echo -e "$(COLOR_GREEN)✓ Successfully installed to $(DESTDIR)$(PREFIX)/$(SCRIPT_NAME)$(COLOR_RESET)"
+#######################################
+# Help target - display available commands
+#######################################
+help:
 	@echo ""
-	@echo "You can now run: $(SCRIPT_NAME) --help"
+	@echo "webclone.sh Makefile"
+	@echo ""
+	@echo "Available targets:"
+	@echo "  install      - Install script to system path (/usr/local/bin)"
+	@echo "  install-user - Install script to user-local path (~/.local/bin)"
+	@echo "  uninstall    - Remove script from system"
+	@echo "  test         - Run automated tests against sample URLs"
+	@echo "  debug        - Run script in debug mode (set -x)"
+	@echo "  clean        - Remove test output files"
+	@echo "  lint         - Validate script syntax with shellcheck"
+	@echo "  info         - Show script information and dependencies"
+	@echo "  help         - Display this help message"
+	@echo ""
+	@echo "Examples:"
+	@echo "  make install                    # System-wide installation (may need sudo)"
+	@echo "  make install-user               # User-only installation"
+	@echo "  make test                       # Run all tests"
+	@echo "  make debug URL=https://example.com"
+	@echo "  make uninstall                  # Remove from system"
+	@echo ""
 
-.PHONY: install-local
-install-local: PREFIX=$(HOME)/.local/bin
-install-local: install
-	@echo -e "$(COLOR_GREEN)✓ Installed to user directory: $(HOME)/.local/bin/$(SCRIPT_NAME)$(COLOR_RESET)"
-	@echo -e "$(COLOR_YELLOW)Note: Ensure $(HOME)/.local/bin is in your PATH$(COLOR_RESET)"
-
-.PHONY: uninstall
-uninstall:
-	@echo -e "$(COLOR_BLUE)==> Uninstalling $(SCRIPT_NAME)...$(COLOR_RESET)"
-	@for dir in "/usr/local/bin" "$(HOME)/.local/bin" "/usr/bin"; do \
-		if [ -f "$$dir/$(SCRIPT_NAME)" ]; then \
-			echo -e "$(COLOR_YELLOW)Removing: $$dir/$(SCRIPT_NAME)$(COLOR_RESET)"; \
-			rm -f "$$dir/$(SCRIPT_NAME)" || echo -e "$(COLOR_RED)Failed to remove $$dir/$(SCRIPT_NAME) (may need sudo)$(COLOR_RESET)"; \
-		fi; \
-	done
-	@echo -e "$(COLOR_GREEN)✓ Uninstallation complete$(COLOR_RESET)"
-
-.PHONY: check-script
-check-script:
+#######################################
+# Install target - copy script to /usr/local/bin
+#######################################
+install:
+	@echo "[INFO] Installing $(SCRIPT_NAME) to $(INSTALL_DIR)..."
 	@if [ ! -f "$(SCRIPT_NAME)" ]; then \
-		echo -e "$(COLOR_RED)Error: $(SCRIPT_NAME) not found in current directory$(COLOR_RESET)"; \
+		echo "[ERROR] Script file not found: $(SCRIPT_NAME)"; \
 		exit 1; \
 	fi
-	@if [ ! -x "$(SCRIPT_NAME)" ]; then \
-		echo -e "$(COLOR_YELLOW)Making script executable...$(COLOR_RESET)"; \
-		chmod +x $(SCRIPT_NAME); \
+	@mkdir -p $(INSTALL_DIR)
+	@cp "$(SCRIPT_NAME)" "$(INSTALL_DIR)/$(SCRIPT_NAME)"
+	@chmod +x "$(INSTALL_DIR)/$(SCRIPT_NAME)"
+	@echo "[OK] Successfully installed to $(INSTALL_DIR)/$(SCRIPT_NAME)"
+	@echo "[NOTE] You may need sudo for system-wide installation: sudo make install"
+
+#######################################
+# Install to user-local bin directory
+#######################################
+install-user:
+	@echo "[INFO] Installing $(SCRIPT_NAME) to $(USER_BIN_DIR)..."
+	@if [ ! -f "$(SCRIPT_NAME)" ]; then \
+		echo "[ERROR] Script file not found: $(SCRIPT_NAME)"; \
+		exit 1; \
 	fi
-	@echo -e "$(COLOR_GREEN)✓ Script validation passed$(COLOR_RESET)"
+	@mkdir -p $(USER_BIN_DIR)
+	@cp "$(SCRIPT_NAME)" "$(USER_BIN_DIR)/$(SCRIPT_NAME)"
+	@chmod +x "$(USER_BIN_DIR)/$(SCRIPT_NAME)"
+	@echo "[OK] Successfully installed to $(USER_BIN_DIR)/$(SCRIPT_NAME)"
+	@echo "[NOTE] Ensure $(USER_BIN_DIR) is in your PATH"
 
-# =============================================================================
-# Testing Targets
-# =============================================================================
+#######################################
+# Uninstall target - remove script from system
+#######################################
+uninstall:
+	@echo "[INFO] Removing $(SCRIPT_NAME) from system..."
+	@if [ -f "$(INSTALL_DIR)/$(SCRIPT_NAME)" ]; then \
+		rm -f "$(INSTALL_DIR)/$(SCRIPT_NAME)" && \
+		echo "[OK] Removed from $(INSTALL_DIR)/$(SCRIPT_NAME)"; \
+	else \
+		echo "[WARN] Script not found in $(INSTALL_DIR)"; \
+	fi
+	@if [ -f "$(USER_BIN_DIR)/$(SCRIPT_NAME)" ]; then \
+		rm -f "$(USER_BIN_DIR)/$(SCRIPT_NAME)" && \
+		echo "[OK] Removed from $(USER_BIN_DIR)/$(SCRIPT_NAME)"; \
+	else \
+		echo "[WARN] Script not found in $(USER_BIN_DIR)"; \
+	fi
+	@echo "[OK] Uninstallation complete"
 
-.PHONY: test
-test: check-script test-html test-markdown test-help test-clean
+#######################################
+# Test target - run automated tests
+#######################################
+test: test-html test-markdown test-help test-version
 	@echo ""
-	@echo -e "$(COLOR_GREEN)========================================$(COLOR_RESET)"
-	@echo -e "$(COLOR_GREEN)All tests completed successfully!$(COLOR_RESET)"
-	@echo -e "$(COLOR_GREEN)========================================$(COLOR_RESET)"
+	@echo "====================================="
+	@echo "All tests completed successfully!"
+	@echo "====================================="
 
-.PHONY: test-html
+#######################################
+# Test HTML output
+#######################################
 test-html:
 	@echo ""
-	@echo -e "$(COLOR_BLUE)==> Testing HTML output...$(COLOR_RESET)"
-	@mkdir -p test_output
-	@./$(SCRIPT_NAME) --html https://example.com > /dev/null 2>&1 || true
-	@ls -la *.html 2>/dev/null | head -5 || echo "No HTML files generated (expected if network unavailable)"
-	@echo -e "$(COLOR_GREEN)✓ HTML test completed$(COLOR_RESET)"
+	@echo "[TEST] Testing HTML output..."
+	@echo "[TEST] Fetching https://example.com as HTML..."
+	@./$(SCRIPT_NAME) --html https://example.com || exit 1
+	@if ls Example_Domain_*.html 1>/dev/null 2>&1; then \
+		echo "[PASS] HTML file created successfully"; \
+		if grep -q "data:image" Example_Domain_*.html 2>/dev/null; then \
+			echo "[PASS] Images are inlined as data URIs"; \
+		else \
+			echo "[SKIP] No images found or inlining skipped"; \
+		fi; \
+		if ! grep -q "<script" Example_Domain_*.html 2>/dev/null; then \
+			echo "[PASS] JavaScript stripped successfully"; \
+		else \
+			echo "[FAIL] JavaScript still present in output"; \
+			exit 1; \
+		fi; \
+		if grep -q "Original Source" Example_Domain_*.html 2>/dev/null; then \
+			echo "[PASS] Original link injected successfully"; \
+		else \
+			echo "[FAIL] Original link not found in output"; \
+			exit 1; \
+		fi; \
+	else \
+		echo "[FAIL] HTML file was not created"; \
+		exit 1; \
+	fi
 
-.PHONY: test-markdown
+#######################################
+# Test Markdown output
+#######################################
 test-markdown:
 	@echo ""
-	@echo -e "$(COLOR_BLUE)==> Testing Markdown output...$(COLOR_RESET)"
-	@./$(SCRIPT_NAME) --markdown https://example.com > /dev/null 2>&1 || true
-	@ls -la *.md 2>/dev/null | head -5 || echo "No MD files generated (expected if network unavailable)"
-	@echo -e "$(COLOR_GREEN)✓ Markdown test completed$(COLOR_RESET)"
+	@echo "[TEST] Testing Markdown output..."
+	@echo "[TEST] Fetching https://example.com as Markdown..."
+	@./$(SCRIPT_NAME) --markdown https://example.com || exit 1
+	@if ls Example_Domain_*.md 1>/dev/null 2>&1; then \
+		echo "[PASS] Markdown file created successfully"; \
+		if grep -q "# Example Domain" Example_Domain_*.md 2>/dev/null; then \
+			echo "[PASS] Title extracted correctly"; \
+		else \
+			echo "[WARN] Title may not have been extracted"; \
+		fi; \
+		if grep -q "example.com" Example_Domain_*.md 2>/dev/null; then \
+			echo "[PASS] Source link preserved in Markdown"; \
+		else \
+			echo "[FAIL] Source link missing from Markdown"; \
+			exit 1; \
+		fi; \
+	else \
+		echo "[FAIL] Markdown file was not created"; \
+		exit 1; \
+	fi
 
-.PHONY: test-help
+#######################################
+# Test help option
+#######################################
 test-help:
 	@echo ""
-	@echo -e "$(COLOR_BLUE)==> Testing help output...$(COLOR_RESET)"
-	@./$(SCRIPT_NAME) --help | head -20
-	@echo -e "$(COLOR_GREEN)✓ Help test completed$(COLOR_RESET)"
+	@echo "[TEST] Testing --help option..."
+	@./$(SCRIPT_NAME) --help > /tmp/webclone_help.txt
+	@if grep -q "USAGE" /tmp/webclone_help.txt && \
+	   grep -q "OPTIONS" /tmp/webclone_help.txt && \
+	   grep -q "EXAMPLES" /tmp/webclone_help.txt; then \
+		echo "[PASS] Help menu displays correctly"; \
+	else \
+		echo "[FAIL] Help menu is incomplete"; \
+		exit 1; \
+	fi
+	@rm -f /tmp/webclone_help.txt
 
-.PHONY: test-verbose
-test-verbose:
+#######################################
+# Test version option
+#######################################
+test-version:
 	@echo ""
-	@echo -e "$(COLOR_BLUE)==> Testing verbose mode...$(COLOR_RESET)"
-	@./$(SCRIPT_NAME) --verbose --help > /dev/null 2>&1 || true
-	@echo -e "$(COLOR_GREEN)✓ Verbose mode test completed$(COLOR_RESET)"
+	@echo "[TEST] Testing --version option..."
+	@./$(SCRIPT_NAME) --version > /tmp/webclone_version.txt
+	@if grep -q "webclone.sh version" /tmp/webclone_version.txt; then \
+		echo "[PASS] Version displays correctly"; \
+	else \
+		echo "[FAIL] Version output is incorrect"; \
+		exit 1; \
+	fi
+	@rm -f /tmp/webclone_version.txt
 
-.PHONY: test-clean
-test-clean:
+#######################################
+# Debug target - run with verbose/debug mode
+#######################################
+debug:
 	@echo ""
-	@echo -e "$(COLOR_BLUE)==> Cleaning up test files...$(COLOR_RESET)"
-	@rm -rf test_output/
-	@echo -e "$(COLOR_GREEN)✓ Cleanup completed$(COLOR_RESET)"
-
-.PHONY: test-offline
-test-offline:
-	@echo ""
-	@echo -e "$(COLOR_BLUE)==> Running offline syntax check...$(COLOR_RESET)"
-	@bash -n $(SCRIPT_NAME) && echo -e "$(COLOR_GREEN)✓ Syntax check passed$(COLOR_RESET)" || echo -e "$(COLOR_RED)✗ Syntax errors found$(COLOR_RESET)"
-	@shellcheck $(SCRIPT_NAME) 2>/dev/null && echo -e "$(COLOR_GREEN)✓ ShellCheck passed$(COLOR_RESET)" || echo -e "$(COLOR_YELLOW)ShellCheck not installed or warnings found$(COLOR_RESET)"
-
-# =============================================================================
-# Debug Target
-# =============================================================================
-
-.PHONY: debug
-debug: check-script
-ifndef URL
-	@echo -e "$(COLOR_RED)Error: URL not specified$(COLOR_RESET)"
-	@echo -e "$(COLOR_YELLOW)Usage: make debug URL=https://example.com$(COLOR_RESET)"
-	@exit 1
-endif
-	@echo -e "$(COLOR_BLUE)==> Running $(SCRIPT_NAME) in debug mode...$(COLOR_RESET)"
-	@echo -e "$(COLOR_YELLOW)Target URL: $(URL)$(COLOR_RESET)"
+	@echo "[DEBUG] Running in debug mode..."
+	@if [ -z "$(URL)" ]; then \
+		echo "[WARN] No URL specified, using https://example.com"; \
+		URL="https://example.com"; \
+	fi
+	@echo "[DEBUG] Target URL: $(URL)"
+	@echo "[DEBUG] Starting trace..."
 	@echo ""
 	@bash -x ./$(SCRIPT_NAME) --verbose $(URL)
 
-.PHONY: debug-md
-debug-md: check-script
-ifndef URL
-	@echo -e "$(COLOR_RED)Error: URL not specified$(COLOR_RESET)"
-	@echo -e "$(COLOR_YELLOW)Usage: make debug-md URL=https://example.com$(COLOR_RESET)"
-	@exit 1
-endif
-	@echo -e "$(COLOR_BLUE)==> Running $(SCRIPT_NAME) in debug mode (Markdown output)...$(COLOR_RESET)"
-	@echo -e "$(COLOR_YELLOW)Target URL: $(URL)$(COLOR_RESET)"
-	@echo ""
-	@bash -x ./$(SCRIPT_NAME) --verbose --markdown $(URL)
-
-# =============================================================================
-# Development & Maintenance Targets
-# =============================================================================
-
-.PHONY: lint
-lint:
-	@echo -e "$(COLOR_BLUE)==> Running ShellCheck...$(COLOR_RESET)"
-	@shellcheck $(SCRIPT_NAME) || echo -e "$(COLOR_YELLOW)ShellCheck completed with warnings$(COLOR_RESET)"
-
-.PHONY: validate
-validate: lint test-offline
-	@echo -e "$(COLOR_GREEN)✓ All validations passed$(COLOR_RESET)"
-
-.PHONY: clean
+#######################################
+# Clean target - remove test artifacts
+#######################################
 clean:
-	@echo -e "$(COLOR_BLUE)==> Cleaning generated files...$(COLOR_RESET)"
-	@rm -f *.html *.md 2>/dev/null || true
-	@rm -rf test_output/ 2>/dev/null || true
-	@echo -e "$(COLOR_GREEN)✓ Clean completed$(COLOR_RESET)"
+	@echo "[INFO] Cleaning up test files..."
+	@rm -f Example_Domain_*.html Example_Domain_*.md
+	@rm -f *_*.html *_*.md
+	@echo "[OK] Cleanup complete"
 
-.PHONY: version
-version:
-	@./$(SCRIPT_NAME) --version
+#######################################
+# Validate script syntax
+#######################################
+lint:
+	@echo "[INFO] Checking script syntax..."
+	@if command -v shellcheck &> /dev/null; then \
+		shellcheck $(SCRIPT_NAME); \
+		echo "[OK] ShellCheck passed"; \
+	else \
+		echo "[WARN] shellcheck not installed, skipping..."; \
+		bash -n $(SCRIPT_NAME) && echo "[OK] Basic syntax check passed"; \
+	fi
 
-# =============================================================================
-# Help Target
-# =============================================================================
-
-.PHONY: help
-help:
+#######################################
+# Show script info
+#######################################
+info:
+	@echo "webclone.sh Information"
 	@echo ""
-	@echo -e "$(COLOR_BLUE)web2offline.sh - Makefile Targets$(COLOR_RESET)"
+	@echo "Script: $(SCRIPT_NAME)"
+	@echo "Size: $$(wc -c < $(SCRIPT_NAME)) bytes"
+	@echo "Lines: $$(wc -l < $(SCRIPT_NAME))"
+	@echo "Executable: $$(test -x $(SCRIPT_NAME) && echo 'Yes' || echo 'No')"
 	@echo ""
-	@echo -e "$(COLOR_GREEN)Installation:$(COLOR_RESET)"
-	@echo "  make install          Install to /usr/local/bin (requires sudo)"
-	@echo "  make install-local    Install to ~/.local/bin (no sudo needed)"
-	@echo "  make uninstall        Remove from system"
-	@echo ""
-	@echo -e "$(COLOR_GREEN)Testing:$(COLOR_RESET)"
-	@echo "  make test             Run all automated tests"
-	@echo "  make test-html        Test HTML output generation"
-	@echo "  make test-markdown    Test Markdown output generation"
-	@echo "  make test-help        Test help menu output"
-	@echo "  make test-verbose     Test verbose mode"
-	@echo "  make test-offline     Run offline syntax checks"
-	@echo ""
-	@echo -e "$(COLOR_GREEN)Debugging:$(COLOR_RESET)"
-	@echo "  make debug URL=<url>  Run script in debug mode (HTML)"
-	@echo "  make debug-md URL=<url>  Run script in debug mode (Markdown)"
-	@echo ""
-	@echo -e "$(COLOR_GREEN)Development:$(COLOR_RESET)"
-	@echo "  make lint             Run ShellCheck static analysis"
-	@echo "  make validate         Run all validations"
-	@echo "  make clean            Remove generated files"
-	@echo "  make version          Show script version"
-	@echo ""
-	@echo -e "$(COLOR_GREEN)Examples:$(COLOR_RESET)"
-	@echo "  sudo make install"
-	@echo "  make install-local"
-	@echo "  make test"
-	@echo "  make debug URL=https://example.com"
-	@echo ""
+	@echo "Dependencies:"
+	@for cmd in curl sed grep awk date base64; do \
+		if command -v $$cmd &> /dev/null; then \
+			echo "  [OK] $$cmd"; \
+		else \
+			echo "  [MISSING] $$cmd"; \
+		fi; \
+	done
